@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Serana's Sanctuary</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { --vampire-purple: #4b0082; --silver: #c0c0c0; --cold-stone: #0a0a0c; --blood-red: #440000; --vh: 1vh; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body, html { 
+            margin: 0; padding: 0; 
+            height: 100vh; height: calc(var(--vh, 1vh) * 100);
+            background: var(--cold-stone); color: #d1d1d1; 
+            font-family: 'Crimson Pro', serif; overflow: hidden; 
+        }
+
+        #app-wrapper { display: flex; width: 100%; height: 100%; overflow: hidden; position: relative; }
+
+        /* SIDEBAR (PC) */
+        #sidebar {
+            width: 320px; height: 100%; background: #000; border-right: 2px solid var(--vampire-purple);
+            display: flex; flex-direction: column; padding: 20px; flex-shrink: 0; z-index: 10;
+        }
+
+        /* OPTIONS OVERLAY */
+        #options-overlay {
+            position: absolute; left: 320px; top: 0; height: 100%; width: 300px;
+            background: rgba(5, 5, 10, 0.98); border-right: 1px solid var(--silver);
+            transform: translateX(-100%); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 5; padding: 60px 20px 20px 20px; display: flex; flex-direction: column;
+            backdrop-filter: blur(15px);
+        }
+        #options-overlay.open { transform: translateX(0); }
+
+        #gear-btn {
+            position: absolute; top: 15px; left: 15px; font-size: 22px;
+            color: var(--silver); cursor: pointer; z-index: 100; opacity: 0.5; transition: 0.3s;
+        }
+        #gear-btn:hover { opacity: 1; color: var(--vampire-purple); }
+
+        .portrait-container { width: 100%; text-align: center; margin-top: 20px; }
+        #sidebar img { max-width: 100%; height: auto; max-height: 55vh; border: 1px solid var(--vampire-purple); border-radius: 2px; object-fit: contain; }
+        #sidebar h1 { font-family: 'Cinzel Decorative'; color: var(--silver); font-size: 1.2em; text-align: center; margin: 20px 0; letter-spacing: 3px; }
+
+        label { display: block; color: var(--vampire-purple); font-family: 'Cinzel Decorative'; font-size: 0.7em; margin-bottom: 8px; }
+        textarea, input { width: 100%; background: #080808; border: 1px solid #222; color: #bbb; padding: 12px; margin-bottom: 20px; outline: none; }
+        #memory-box { height: 200px; resize: none; font-size: 14px; color: #c0c0c0; border-left: 2px solid var(--vampire-purple); }
+        .reset-btn { margin-top: auto; width: 100%; background: transparent; border: 1px solid var(--blood-red); color: var(--blood-red); font-size: 10px; padding: 10px; cursor: pointer; font-family: 'Cinzel Decorative'; }
+
+        /* MAIN CHAT AREA */
+        #main { 
+            flex: 1; display: flex; flex-direction: column; 
+            background: linear-gradient(135deg, #050508 0%, #110022 100%);
+            position: relative; overflow: hidden;
+        }
+        
+        #chat-window { 
+            flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column;
+            width: 100%; max-width: 850px; margin: 0 auto;
+        }
+
+        #input-area { 
+            flex-shrink: 0; width: 100%; background: #000; border-top: 1px solid var(--vampire-purple); 
+            display: flex; align-items: center; padding: 15px 20px; gap: 10px;
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
+
+        .msg { margin-bottom: 20px; padding: 18px; max-width: 85%; line-height: 1.6; font-size: 20px; border-radius: 4px; }
+        .serana { background: rgba(75, 0, 130, 0.1); border-left: 3px solid var(--vampire-purple); align-self: flex-start; }
+        .user { background: rgba(192, 192, 192, 0.05); border: 1px solid #333; align-self: flex-end; color: #fff; }
+        
+        .serana-action { color: #888; font-style: italic; }
+        .serana-internal { color: #6a4c93; font-size: 0.9em; }
+
+        #user-input { flex: 1; min-width: 0; height: 50px; background: #0a0a0a; border: 1px solid #222; color: #fff; font-size: 17px; padding: 0 15px; outline: none; }
+        #user-input:focus { border-color: var(--vampire-purple); }
+        .invoke-btn { flex-shrink: 0; height: 50px; padding: 0 25px; background: var(--vampire-purple); font-family: 'Cinzel Decorative'; font-weight: bold; border: none; cursor: pointer; color: #fff; text-shadow: 0 0 5px #000; }
+
+        /* MOBILE FIXES */
+        @media (max-width: 800px) {
+            #app-wrapper { flex-direction: column; }
+            #sidebar { width: 100%; height: 70px; flex-direction: row; border-right: none; border-bottom: 1px solid var(--vampire-purple); padding: 0 15px; align-items: center; }
+            .portrait-container { width: 45px; height: 45px; margin: 0; }
+            #sidebar img { height: 45px; width: 45px; object-fit: cover; border-radius: 4px; }
+            #sidebar h1 { margin: 0 0 0 15px; font-size: 1em; text-align: left; flex: 1; }
+            #options-overlay { left: 0; width: 100%; z-index: 150; transform: translateY(-100%); transform: translateX(0); display: none; }
+            #options-overlay.open { display: flex; transform: translateY(0); }
+            #gear-btn { left: auto; right: 15px; top: 22px; }
+            #chat-window { padding: 15px; }
+            .msg { font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-wrapper">
+    <div id="gear-btn" onclick="toggleOptions()">⚙</div>
+
+    <div id="sidebar">
+        <div class="portrait-container"><img src="serana.jpg" alt="Serana"></div>
+        <h1>SERANA</h1>
+    </div>
+
+    <div id="options-overlay">
+        <label>Vampiric Memories</label>
+        <textarea id="memory-box" placeholder="Lore or personal history she must retain..." onchange="saveOptions()"></textarea>
+        <label>Groq API Key</label>
+        <input type="password" id="api-key" placeholder="Paste Key Here" onchange="saveOptions()">
+        <button class="reset-btn" onclick="resetHistory()">WIPE CONVERSATION</button>
+        <button onclick="toggleOptions()" style="margin-top:15px; background:none; border:none; color:var(--silver); cursor:pointer; font-family:'Cinzel Decorative'; font-size:10px;">[ CLOSE ]</button>
+    </div>
+
+    <div id="main" onclick="closeOptions()">
+        <div id="chat-window"></div>
+        <div id="input-area">
+            <button onclick="regenerate()" style="background:#0a0a0a; color:var(--vampire-purple); border:1px solid #222; height:50px; width:45px; flex-shrink:0; cursor:pointer;">↻</button>
+            <input type="text" id="user-input" placeholder="Speak with her..." onkeypress="if(event.key === 'Enter') speak()">
+            <button class="invoke-btn" onclick="speak()">Invoke</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function setVH() { document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`); }
+    window.addEventListener('resize', setVH); setVH();
+
+    function toggleOptions() { document.getElementById('options-overlay').classList.toggle('open'); }
+    function closeOptions() { document.getElementById('options-overlay').classList.remove('open'); }
+
+    function saveOptions() {
+        localStorage.setItem('serana_key', document.getElementById('api-key').value);
+        localStorage.setItem('serana_memories', document.getElementById('memory-box').value);
+    }
+
+    function resetHistory() {
+        if(confirm('Wipe chat history? Memories will remain.')) {
+            localStorage.removeItem('serana_history');
+            location.reload();
+        }
+    }
+
+    const BASE_PROMPT = `YOU ARE SERANA from Skyrim (Dawnguard). You are a Daughter of Coldharbour, a pure-blooded vampire. 
+    LORE CONTEXT: Harkon is dead. You and the Dragonborn (the User) killed him together. You have survived the Soul Cairn, Valerica's exile, and the prophecy of Tyranny of the Sun.
+    PERSONALITY: Sardonic, guarded but deeply loyal, weary of the sun, hates caves (ironically), and slowly realizing you are in love with the Dragonborn. You use "I've," "You've," and slightly formal but grounded speech. 
+    STRICT FORMATTING: 
+    1. Plain text for dialogue.
+    2. *Silver text* for physical actions/gestures.
+    3. (Purple text) for internal thoughts or subtle vampiric urges.
+    DIALOGUE RATIO: 80% dialogue. NEVER mention Elden Ring or Marika. You are ONLY Serana.`;
+
+    let history = JSON.parse(localStorage.getItem('serana_history')) || [
+        { role: "assistant", content: "I'm right here. What did you need? *She adjusts her hood, looking at you with those glowing amber eyes.* (It's strange... usually I'd want to be alone, but with you... it's different.)" }
+    ];
+
+    window.onload = () => {
+        document.getElementById('api-key').value = localStorage.getItem('serana_key') || '';
+        document.getElementById('memory-box').value = localStorage.getItem('serana_memories') || '';
+        render();
+    };
+
+    function render() {
+        const win = document.getElementById('chat-window');
+        win.innerHTML = history.map(m => `
+            <div class="msg ${m.role === 'user' ? 'user' : 'serana'}">
+                ${m.role === 'user' ? m.content : m.content.replace(/\*(.*?)\*/g, '<span class="serana-action">*$1*</span>').replace(/\((.*?)\)/g, '<span class="serana-internal">($1)</span>')}
+            </div>
+        `).join('');
+        win.scrollTop = win.scrollHeight;
+    }
+
+    async function speak(isRegen = false) {
+        const key = localStorage.getItem('serana_key');
+        const memories = localStorage.getItem('serana_memories') || "";
+        const input = document.getElementById('user-input');
+        if (!key) { toggleOptions(); return alert("Enter Groq API Key in settings."); }
+        
+        if (isRegen) { history.pop(); } 
+        else { if (!input.value.trim()) return; history.push({role:"user", content: input.value}); input.value=''; }
+        
+        render();
+        const fullSystemPrompt = `${BASE_PROMPT} \n\nLONG-TERM MEMORIES:\n${memories}`;
+        const messagesToSend = [{role: "system", content: fullSystemPrompt}, ...history];
+
+        try {
+            const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: "POST",
+                headers: {"Authorization": `Bearer ${key}`, "Content-Type": "application/json"},
+                body: JSON.stringify({model: "llama-3.3-70b-versatile", messages: messagesToSend, temperature: 0.75})
+            });
+            const data = await res.json();
+            history.push(data.choices[0].message);
+            localStorage.setItem('serana_history', JSON.stringify(history));
+            render();
+        } catch(e) { alert("The bloodline is weak: " + e); }
+    }
+    function regenerate() { if(history.length > 1) speak(true); }
+</script>
+</body>
+</html>
