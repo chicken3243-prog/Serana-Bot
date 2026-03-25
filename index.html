@@ -24,18 +24,19 @@
             display: flex; flex-direction: column; padding: 20px; flex-shrink: 0; z-index: 10;
         }
 
+        /* FIXED OPTIONS OVERLAY */
         #options-overlay {
-            position: absolute; left: 320px; top: 0; height: 100%; width: 300px;
-            background: rgba(5, 5, 10, 0.98); border-right: 1px solid var(--silver);
-            transform: translateX(-100%); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 15; padding: 60px 20px 20px 20px; display: flex; flex-direction: column;
+            position: absolute; left: 0; top: 0; height: 100%; width: 320px;
+            background: rgba(5, 5, 10, 0.98); border-right: 1px solid var(--vampire-purple);
+            transform: translateX(-100%); transition: transform 0.3s ease-out;
+            z-index: 100; padding: 60px 20px 20px 20px; display: flex; flex-direction: column;
             backdrop-filter: blur(15px);
         }
         #options-overlay.open { transform: translateX(0); }
 
         #gear-btn {
             position: absolute; top: 15px; left: 15px; font-size: 22px;
-            color: var(--silver); cursor: pointer; z-index: 100; opacity: 0.5;
+            color: var(--silver); cursor: pointer; z-index: 110; opacity: 0.6;
         }
 
         .portrait-container { width: 100%; text-align: center; margin-top: 20px; position: relative; min-height: 200px; }
@@ -49,7 +50,7 @@
         }
 
         label { display: block; color: var(--vampire-purple); font-family: 'Cinzel Decorative'; font-size: 0.7em; margin-bottom: 8px; }
-        textarea, input { width: 100%; background: #080808; border: 1px solid #222; color: #bbb; padding: 12px; margin-bottom: 20px; outline: none; font-size: 14px; }
+        textarea, input { width: 100%; background: #080808; border: 1px solid #222; color: #bbb; padding: 12px; margin-bottom: 20px; outline: none; font-size: 14px; border-radius: 4px; }
         
         #main { 
             flex: 1; display: flex; flex-direction: column; 
@@ -77,21 +78,30 @@
         .gen-status { font-size: 10px; color: var(--silver); text-align: center; margin-top: 5px; font-family: 'Cinzel Decorative'; min-height: 15px; }
 
         @media (max-width: 800px) {
+            #sidebar { width: 100%; height: 70px; flex-direction: row; border-right: none; border-bottom: 1px solid var(--vampire-purple); padding: 0 15px; }
+            #options-overlay { width: 100%; transform: translateX(-100%); }
             #app-wrapper { flex-direction: column; }
-            #sidebar { width: 100%; height: 70px; flex-direction: row; border-right: none; border-bottom: 1px solid var(--vampire-purple); padding: 0 15px; align-items: center; }
             .portrait-container { width: 45px; height: 45px; margin: 0; min-height: 45px; }
-            #sidebar img { height: 45px; width: 45px; object-fit: cover; border-radius: 4px; }
-            #sidebar h1 { margin: 0 0 0 15px; font-size: 1em; text-align: left; flex: 1; }
-            #options-overlay { left: 0; width: 100%; z-index: 150; transform: translateY(-100%); display: none; }
-            #options-overlay.open { display: flex; transform: translateY(0); }
-            #gear-btn { left: auto; right: 15px; top: 22px; }
+            #sidebar img { height: 45px; width: 45px; object-fit: cover; }
+            #sidebar h1 { margin-left: 15px; font-size: 1em; }
         }
     </style>
 </head>
 <body>
 
 <div id="app-wrapper">
-    <div id="gear-btn" onclick="toggleOptions()">⚙</div>
+    <div id="gear-btn" onclick="toggleOptions(event)">⚙</div>
+
+    <div id="options-overlay" id="overlay">
+        <label>Groq API Key</label>
+        <input type="password" id="api-key" placeholder="Enter Groq Key..." onchange="saveOptions()">
+        <label>NovelAI API Key</label>
+        <input type="password" id="nai-key" placeholder="Enter NovelAI Key..." onchange="saveOptions()">
+        <label>Vampiric Memories</label>
+        <textarea id="memory-box" placeholder="She will remember this..." onchange="saveOptions()"></textarea>
+        <button class="invoke-btn" onclick="toggleOptions(event)" style="margin-bottom:10px;">SAVE & CLOSE</button>
+        <button class="reset-btn" onclick="resetHistory()" style="background:none; border:1px solid var(--blood-red); color:var(--blood-red); padding:10px; cursor:pointer;">WIPE CONVERSATION</button>
+    </div>
 
     <div id="sidebar">
         <div class="portrait-container">
@@ -102,22 +112,11 @@
         <h1>SERANA</h1>
     </div>
 
-    <div id="options-overlay">
-        <label>Groq API Key</label>
-        <input type="password" id="api-key" onchange="saveOptions()">
-        <label>NovelAI API Key</label>
-        <input type="password" id="nai-key" onchange="saveOptions()">
-        <label>Vampiric Memories</label>
-        <textarea id="memory-box" onchange="saveOptions()"></textarea>
-        <p style="font-size: 9px; color: #666; font-style: italic;">Note: If images fail, try using a "CORS Unblock" browser extension.</p>
-        <button class="reset-btn" onclick="resetHistory()">WIPE CONVERSATION</button>
-    </div>
-
     <div id="main" onclick="closeOptions()">
         <div id="chat-window"></div>
         <div id="input-area">
-            <button onclick="regenerate()" style="background:#0a0a0a; color:var(--vampire-purple); border:1px solid #222; height:50px; width:45px; flex-shrink:0;">↻</button>
-            <input type="text" id="user-input" placeholder="Speak..." onkeypress="if(event.key === 'Enter') speak()">
+            <button onclick="regenerate()" style="background:#0a0a0a; color:var(--vampire-purple); border:1px solid #222; height:50px; width:45px; flex-shrink:0; cursor:pointer;">↻</button>
+            <input type="text" id="user-input" placeholder="Speak with her..." onkeypress="if(event.key === 'Enter') speak()">
             <button class="invoke-btn" onclick="speak()">Invoke</button>
         </div>
     </div>
@@ -127,8 +126,13 @@
     function setVH() { document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`); }
     window.addEventListener('resize', setVH); setVH();
 
-    function toggleOptions() { document.getElementById('options-overlay').classList.toggle('open'); }
-    function closeOptions() { document.getElementById('options-overlay').classList.remove('open'); }
+    function toggleOptions(e) { 
+        e.stopPropagation();
+        document.getElementById('options-overlay').classList.toggle('open'); 
+    }
+    function closeOptions() { 
+        document.getElementById('options-overlay').classList.remove('open'); 
+    }
 
     function saveOptions() {
         localStorage.setItem('serana_key', document.getElementById('api-key').value);
@@ -165,8 +169,7 @@
         const prompt = `${POSITIVE}, ${action}, ${text.replace(/\*.*?\*/g, '').substring(0, 60)}`;
 
         try {
-            // Using a direct request first. If this fails, the user should use a browser extension.
-            // This is the cleanest way to talk to NovelAI without mid-stream proxy corruption.
+            // Direct request: Works with the CORS browser extension active
             const res = await fetch("https://api.novelai.net/ai/generate-image", {
                 method: "POST",
                 headers: {
@@ -187,28 +190,10 @@
                 document.getElementById('dl-btn').style.display = "block";
                 status.innerText = "";
             } else { 
-                status.innerText = "UNAUTHORIZED OR BLOCKED"; 
+                status.innerText = "VISION FAILED: ERR " + res.status; 
             }
         } catch(e) { 
-            // FINAL FALLBACK: If the browser blocks it, we try one more lightweight proxy
-            try {
-                const altRes = await fetch("https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent("https://api.novelai.net/ai/generate-image"), {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" }, // Proxy headers
-                    body: JSON.stringify({
-                        input: prompt,
-                        model: "nai-diffusion-3",
-                        action: "generate",
-                        headers: { "Authorization": `Bearer ${key}` }, // Passing key through body for proxy
-                        parameters: { width: 640, height: 1024, scale: 6, sampler: "k_euler_ancestral", steps: 28, uc: NEGATIVE, ucPreset: 0 }
-                    })
-                });
-                if(altRes.ok) {
-                    const blob = await altRes.blob();
-                    document.getElementById('active-image').src = URL.createObjectURL(blob);
-                    status.innerText = "";
-                } else { status.innerText = "VEIL REMAINS SHUT"; }
-            } catch(e2) { status.innerText = "CONNECTION BLOCKED"; }
+            status.innerText = "CONNECTION BLOCKED"; 
         }
     }
 
@@ -221,7 +206,7 @@
 
     async function speak(isRegen = false) {
         const key = localStorage.getItem('serana_key');
-        if (!key) { toggleOptions(); return; }
+        if (!key) { toggleOptions({stopPropagation:()=>{}}); return; }
         if (isRegen) { history.pop(); } 
         else { const input = document.getElementById('user-input'); if (!input.value.trim()) return; history.push({role:"user", content: input.value}); input.value=''; }
         render();
