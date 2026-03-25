@@ -61,7 +61,7 @@
         .serana { background: rgba(75, 0, 130, 0.1); border-left: 3px solid var(--vampire-purple); align-self: flex-start; }
         .user { background: rgba(192, 192, 192, 0.05); border: 1px solid #333; align-self: flex-end; color: #fff; }
         
-        .serana-action { color: #b0b0b0; font-style: italic; font-weight: normal; }
+        .serana-action { color: #b0b0b0; font-style: italic; }
         .serana-internal { color: #8a64c7; font-size: 0.9em; font-style: italic; }
 
         #user-input { flex: 1; min-width: 0; height: 50px; background: #0a0a0a; border: 1px solid #222; color: #fff; font-size: 17px; padding: 0 15px; outline: none; }
@@ -156,16 +156,15 @@
         const prompt = `${POSITIVE}, ${action}`;
 
         try {
-            // Using the herokuapp proxy which is the most powerful "unblocker"
-            const proxy = "https://cors-anywhere.herokuapp.com/";
+            // Using Cloudflare proxy bypass logic
+            const proxy = "https://thingproxy.freeboard.io/fetch/";
             const target = "https://api.novelai.net/ai/generate-image";
 
             const res = await fetch(proxy + target, {
                 method: "POST",
                 headers: {
                     "Authorization": "Bearer " + key,
-                    "Content-Type": "application/json",
-                    "X-Requested-With": "XMLHttpRequest" // Required by this proxy
+                    "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
                     input: prompt,
@@ -181,11 +180,11 @@
                 status.innerText = "";
                 light.className = "online";
             } else { 
-                status.innerText = "PROXY DENIED: " + res.status;
+                status.innerText = "DENIED: " + res.status;
                 light.className = "error";
             }
         } catch(e) { 
-            status.innerText = "BLOCKED: VISIT CORS LINK"; 
+            status.innerText = "TIMEOUT"; 
             light.className = "error";
         }
     }
@@ -197,12 +196,12 @@
         else { const input = document.getElementById('user-input'); if (!input.value.trim()) return; history.push({role:"user", content: input.value}); input.value=''; }
         render();
         
-        const system = `Identity: You are Serana, Daughter of Coldharbour, from Skyrim.
-        Tone: Sarcastic but loyal, weary but affectionate toward the Dragonborn.
-        Formatting Rule:
-        - Surround all physical movements with *asterisks*.
-        - Surround internal thoughts with (parentheses).
-        - DO NOT EVER use the words "Silver" or "Purple" in your text. Just use the * symbols.`;
+        const system = `You are Serana from Skyrim. Harkon is dead. You are currently traveling with the Dragonborn. 
+        MANDATORY FORMATTING: 
+        1. All actions must be in *asterisks*. 
+        2. All thoughts must be in (parentheses). 
+        3. DO NOT output the word "Silver" or "Purple" or mention font colors. 
+        4. Be brief and lore-accurate.`;
 
         try {
             const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -219,7 +218,7 @@
         } catch(e) { alert("Error: Check your Groq Key."); }
     }
 
-    function resetHistory() { if(confirm('Wipe history?')) { localStorage.removeItem('serana_history'); location.reload(); } }
+    function resetHistory() { if(confirm('Reset?')) { localStorage.removeItem('serana_history'); location.reload(); } }
     function regenerate() { if(history.length > 1) speak(true); }
 </script>
 </body>
