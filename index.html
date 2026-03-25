@@ -61,7 +61,7 @@
         .serana { background: rgba(75, 0, 130, 0.1); border-left: 3px solid var(--vampire-purple); align-self: flex-start; }
         .user { background: rgba(192, 192, 192, 0.05); border: 1px solid #333; align-self: flex-end; color: #fff; }
         
-        .serana-action { color: #b0b0b0; font-style: italic; }
+        .serana-action { color: #b0b0b0; font-style: italic; font-weight: normal; }
         .serana-internal { color: #8a64c7; font-size: 0.9em; font-style: italic; }
 
         #user-input { flex: 1; min-width: 0; height: 50px; background: #0a0a0a; border: 1px solid #222; color: #fff; font-size: 17px; padding: 0 15px; outline: none; }
@@ -156,15 +156,16 @@
         const prompt = `${POSITIVE}, ${action}`;
 
         try {
-            // Using a specific CORS proxy that works better with headers
-            const proxy = "https://api.allorigins.win/raw?url=";
+            // Using the herokuapp proxy which is the most powerful "unblocker"
+            const proxy = "https://cors-anywhere.herokuapp.com/";
             const target = "https://api.novelai.net/ai/generate-image";
 
-            const res = await fetch(proxy + encodeURIComponent(target), {
+            const res = await fetch(proxy + target, {
                 method: "POST",
                 headers: {
                     "Authorization": "Bearer " + key,
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "X-Requested-With": "XMLHttpRequest" // Required by this proxy
                 },
                 body: JSON.stringify({
                     input: prompt,
@@ -180,11 +181,11 @@
                 status.innerText = "";
                 light.className = "online";
             } else { 
-                status.innerText = "PROXY ERROR: " + res.status;
+                status.innerText = "PROXY DENIED: " + res.status;
                 light.className = "error";
             }
         } catch(e) { 
-            status.innerText = "FAILED TO CONNECT"; 
+            status.innerText = "BLOCKED: VISIT CORS LINK"; 
             light.className = "error";
         }
     }
@@ -196,7 +197,12 @@
         else { const input = document.getElementById('user-input'); if (!input.value.trim()) return; history.push({role:"user", content: input.value}); input.value=''; }
         render();
         
-        const system = `You are Serana from Skyrim. Use *asterisks* for actions. Use (parentheses) for internal thoughts. NEVER say "Silver" or "Purple". Just use the symbols.`;
+        const system = `Identity: You are Serana, Daughter of Coldharbour, from Skyrim.
+        Tone: Sarcastic but loyal, weary but affectionate toward the Dragonborn.
+        Formatting Rule:
+        - Surround all physical movements with *asterisks*.
+        - Surround internal thoughts with (parentheses).
+        - DO NOT EVER use the words "Silver" or "Purple" in your text. Just use the * symbols.`;
 
         try {
             const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
