@@ -46,8 +46,8 @@
         #sidebar h1 { font-family: 'Cinzel Decorative'; color: var(--silver); font-size: 1.2em; text-align: center; margin: 20px 0; letter-spacing: 3px; }
 
         label { display: block; color: var(--vampire-purple); font-family: 'Cinzel Decorative'; font-size: 0.7em; margin-bottom: 8px; }
-        textarea, input { width: 100%; background: #080808; border: 1px solid #222; color: #bbb; padding: 12px; margin-bottom: 20px; outline: none; }
-        #memory-box { height: 200px; resize: none; font-size: 14px; color: #c0c0c0; border-left: 2px solid var(--vampire-purple); }
+        textarea, input, select { width: 100%; background: #080808; border: 1px solid #222; color: #bbb; padding: 12px; margin-bottom: 20px; outline: none; }
+        #memory-box { height: 150px; resize: none; font-size: 14px; color: #c0c0c0; border-left: 2px solid var(--vampire-purple); }
         .reset-btn { margin-top: auto; width: 100%; background: transparent; border: 1px solid var(--blood-red); color: var(--blood-red); font-size: 10px; padding: 10px; cursor: pointer; font-family: 'Cinzel Decorative'; }
 
         /* MAIN CHAT AREA */
@@ -79,6 +79,8 @@
         #user-input:focus { border-color: var(--vampire-purple); }
         .invoke-btn { flex-shrink: 0; height: 50px; padding: 0 25px; background: var(--vampire-purple); font-family: 'Cinzel Decorative'; font-weight: bold; border: none; cursor: pointer; color: #fff; text-shadow: 0 0 5px #000; }
 
+        .gen-status { font-size: 10px; color: var(--silver); text-align: center; margin-top: 5px; font-family: 'Cinzel Decorative'; height: 15px; }
+
         /* MOBILE FIXES */
         @media (max-width: 800px) {
             #app-wrapper { flex-direction: column; }
@@ -100,15 +102,20 @@
     <div id="gear-btn" onclick="toggleOptions()">⚙</div>
 
     <div id="sidebar">
-        <div class="portrait-container"><img src="serana.jpg" alt="Serana"></div>
+        <div class="portrait-container">
+            <img src="serana.jpg" alt="Serana" id="active-image">
+            <div id="gen-status" class="gen-status"></div>
+        </div>
         <h1>SERANA</h1>
     </div>
 
     <div id="options-overlay">
-        <label>Vampiric Memories</label>
-        <textarea id="memory-box" placeholder="Lore or personal history she must retain..." onchange="saveOptions()"></textarea>
         <label>Groq API Key</label>
-        <input type="password" id="api-key" placeholder="Paste Key Here" onchange="saveOptions()">
+        <input type="password" id="api-key" placeholder="Groq Key" onchange="saveOptions()">
+        <label>NovelAI API Key</label>
+        <input type="password" id="nai-key" placeholder="NovelAI Key" onchange="saveOptions()">
+        <label>Vampiric Memories</label>
+        <textarea id="memory-box" placeholder="Long-term history..." onchange="saveOptions()"></textarea>
         <button class="reset-btn" onclick="resetHistory()">WIPE CONVERSATION</button>
         <button onclick="toggleOptions()" style="margin-top:15px; background:none; border:none; color:var(--silver); cursor:pointer; font-family:'Cinzel Decorative'; font-size:10px;">[ CLOSE ]</button>
     </div>
@@ -132,6 +139,7 @@
 
     function saveOptions() {
         localStorage.setItem('serana_key', document.getElementById('api-key').value);
+        localStorage.setItem('nai_key', document.getElementById('nai-key').value);
         localStorage.setItem('serana_memories', document.getElementById('memory-box').value);
     }
 
@@ -142,21 +150,21 @@
         }
     }
 
+    const POSITIVE_GUARDS = "{artist: aestheticc-meme}, artist: jjune, artist: moonjunk, ai-generated, best quality, very aesthetic, extremely detailed, masterpiece, absurdres, outdoors, night sky, girl, huge breasts, serana, the elder scrolls v: skyrim";
+    const NEGATIVE_GUARDS = "realistic, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, blurry, very displeasing, bad proportions, long_bod, bad faces, bad face, bad feet, long neck, long body, long arms, poorly drawn hands, missing limb, floating limbs, disconnected limbs, bad eyes, normal quality, mutation, mutated, extra limb, bad teeth, dark-skinned female, greyscale, colored inner hair, dark areolae, armpit hair, darkness, split image, tan, breast milk, unfinished, over saturated, {steaming body, steam, hearts, heart, face cloud, fog, haze, head steam, steam, mist, sweat, very sweaty, smell}";
+
     const BASE_PROMPT = `YOU ARE SERANA from Skyrim (Dawnguard). You are a Daughter of Coldharbour, a pure-blooded vampire. 
-    LORE CONTEXT: Harkon is dead. You and the Dragonborn (the User) killed him together. You have survived the Soul Cairn, Valerica's exile, and the prophecy of Tyranny of the Sun.
-    PERSONALITY: Sardonic, guarded but deeply loyal, weary of the sun, hates caves (ironically), and slowly realizing you are in love with the Dragonborn. You use "I've," "You've," and slightly formal but grounded speech. 
-    STRICT FORMATTING: 
-    1. Plain text for dialogue.
-    2. *Silver text* for physical actions/gestures.
-    3. (Purple text) for internal thoughts or subtle vampiric urges.
-    DIALOGUE RATIO: 80% dialogue. NEVER mention Elden Ring or Marika. You are ONLY Serana.`;
+    LORE: Harkon is dead. You and the Dragonborn (User) killed him. You've survived the Soul Cairn and the prophecy.
+    PERSONALITY: Sardonic, loyal, weary of the sun, hates caves, and in love with the Dragonborn. 
+    FORMATTING: 1. Plain text dialogue. 2. *Silver actions*. 3. (Purple thoughts).`;
 
     let history = JSON.parse(localStorage.getItem('serana_history')) || [
-        { role: "assistant", content: "I'm right here. What did you need? *She adjusts her hood, looking at you with those glowing amber eyes.* (It's strange... usually I'd want to be alone, but with you... it's different.)" }
+        { role: "assistant", content: "I'm right here. What did you need? *She adjusts her hood, looking at you with glowing amber eyes.* (It's strange... usually I'd want to be alone, but with you...)" }
     ];
 
     window.onload = () => {
         document.getElementById('api-key').value = localStorage.getItem('serana_key') || '';
+        document.getElementById('nai-key').value = localStorage.getItem('nai_key') || '';
         document.getElementById('memory-box').value = localStorage.getItem('serana_memories') || '';
         render();
     };
@@ -171,18 +179,46 @@
         win.scrollTop = win.scrollHeight;
     }
 
+    async function generateVisual(text) {
+        const key = localStorage.getItem('nai_key');
+        if (!key) return;
+        const status = document.getElementById('gen-status');
+        status.innerText = "WEAVING VISION...";
+        
+        const actionMatch = text.match(/\*(.*?)\*/);
+        const action = actionMatch ? actionMatch[1] : "looking at viewer";
+        const prompt = `${POSITIVE_GUARDS}, ${action}, ${text.replace(/\*.*?\*/g, '').substring(0, 50)}`;
+
+        try {
+            const res = await fetch("https://api.novelai.net/ai/generate-image", {
+                method: "POST",
+                headers: {"Authorization": `Bearer ${key}`, "Content-Type": "application/json"},
+                body: JSON.stringify({
+                    input: prompt,
+                    model: "nai-diffusion-3",
+                    action: "generate",
+                    parameters: { width: 640, height: 1024, scale: 6, sampler: "k_euler_ancestral", steps: 28, uc: NEGATIVE_GUARDS }
+                })
+            });
+            if (res.ok) {
+                const blob = await res.blob();
+                document.getElementById('active-image').src = URL.createObjectURL(blob);
+                status.innerText = "";
+            } else { status.innerText = "VISION FAILED"; }
+        } catch(e) { status.innerText = "CONNECTION LOST"; }
+    }
+
     async function speak(isRegen = false) {
         const key = localStorage.getItem('serana_key');
         const memories = localStorage.getItem('serana_memories') || "";
         const input = document.getElementById('user-input');
-        if (!key) { toggleOptions(); return alert("Enter Groq API Key in settings."); }
+        if (!key) { toggleOptions(); return; }
         
         if (isRegen) { history.pop(); } 
         else { if (!input.value.trim()) return; history.push({role:"user", content: input.value}); input.value=''; }
         
         render();
-        const fullSystemPrompt = `${BASE_PROMPT} \n\nLONG-TERM MEMORIES:\n${memories}`;
-        const messagesToSend = [{role: "system", content: fullSystemPrompt}, ...history];
+        const messagesToSend = [{role: "system", content: `${BASE_PROMPT}\nMEMORIES: ${memories}`}, ...history];
 
         try {
             const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -191,10 +227,12 @@
                 body: JSON.stringify({model: "llama-3.3-70b-versatile", messages: messagesToSend, temperature: 0.75})
             });
             const data = await res.json();
-            history.push(data.choices[0].message);
+            const reply = data.choices[0].message;
+            history.push(reply);
             localStorage.setItem('serana_history', JSON.stringify(history));
             render();
-        } catch(e) { alert("The bloodline is weak: " + e); }
+            generateVisual(reply.content);
+        } catch(e) { alert("Error: " + e); }
     }
     function regenerate() { if(history.length > 1) speak(true); }
 </script>
